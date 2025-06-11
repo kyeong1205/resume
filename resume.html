@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>공현경 | Interactive Resume</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chosen Palette: Warm Neutrals (Stone, Muted Teal) -->
+    <!-- Application Structure Plan: A single-page dashboard application designed for recruiters. The structure prioritizes a guided user journey. It starts with a summary (Hero), followed by an interactive Career Timeline which is the central feature. Clicking a company on the timeline reveals detailed achievements, preventing information overload. A "Technical Stack" section uses a Chart.js bar chart to visualize skill categories; clicking a category filters and displays the specific skills. "Project Highlights" use a card layout for easy scanning of key accomplishments. This structure transforms a linear resume into an engaging, explorable profile, allowing users to dive into areas of interest (career path, technical skills) non-linearly, which is more effective for evaluation. -->
+    <!-- Visualization & Content Choices: 
+        - Career History -> Goal: Show change & organize -> Viz: Interactive Vertical Timeline (HTML/CSS/JS). Interaction: On-click reveals detailed work experience in a separate pane. Justification: Visually represents career progression and makes dense information digestible.
+        - Technical Skills -> Goal: Inform & compare -> Viz: Bar Chart (Chart.js) + Dynamic List. Interaction: Clicking a bar filters the skill list. Justification: Provides a quick overview of skill distribution and allows for focused exploration of specific tech stacks.
+        - Key Projects -> Goal: Inform & highlight -> Viz: Card-based layout (HTML/Tailwind). Interaction: Simple hover effects. Justification: Cards are scannable and effectively present key achievements as standalone accomplishments.
+        - Education/Certs -> Goal: Inform -> Viz: Simple list with icons (HTML/Tailwind). Interaction: None. Justification: Clear, concise presentation for foundational information.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f5f5f4; /* stone-100 */
+        }
+        .nav-link {
+            transition: color 0.3s, border-color 0.3s;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #0d9488; /* teal-600 */
+            border-color: #0d9488;
+        }
+        .timeline-item {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .timeline-item:hover {
+            transform: translateY(-2px);
+        }
+        .timeline-item.active .timeline-marker {
+            background-color: #0d9488; /* teal-600 */
+        }
+        .timeline-item.active .timeline-company {
+            color: #0d9488;
+            font-weight: 700;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 40vh;
+        }
+        .highlight-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .highlight-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="text-stone-800">
+
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4">
+            <ul class="flex justify-center space-x-4 md:space-x-8">
+                <li><a href="#summary" class="nav-link font-medium border-b-2 border-transparent pb-1">소개</a></li>
+                <li><a href="#career" class="nav-link font-medium border-b-2 border-transparent pb-1">경력 타임라인</a></li>
+                <li><a href="#skills" class="nav-link font-medium border-b-2 border-transparent pb-1">기술 스택</a></li>
+                <li><a href="#projects" class="nav-link font-medium border-b-2 border-transparent pb-1">주요 프로젝트</a></li>
+                <li><a href="#education" class="nav-link font-medium border-b-2 border-transparent pb-1">학력 & 자격증</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+        
+        <section id="summary" class="text-center my-12 md:my-16">
+            <h1 class="text-4xl md:text-5xl font-bold text-stone-900">공현경</h1>
+            <p class="text-xl md:text-2xl text-teal-700 mt-2">임베디드 SW 엔지니어</p>
+            <div class="flex justify-center space-x-6 mt-6 text-stone-600">
+                <span class="flex items-center"><i class="fas fa-envelope mr-2 text-teal-600"></i> kyeong198912@gmail.com</span>
+                <span class="flex items-center"><i class="fas fa-mobile-alt mr-2 text-teal-600"></i> 010-2784-6758</span>
+                <a href="https://github.com/your-id" target="_blank" class="flex items-center hover:text-teal-600 transition-colors">
+                    <i class="fab fa-github mr-2 text-teal-600"></i> Portfolio
+                </a>
+            </div>
+            <p class="max-w-3xl mx-auto mt-8 text-lg leading-relaxed">
+                12년 이상 임베디드 리눅스 및 OpenWRT 환경에서 네트워크 시스템을 개발해왔습니다. 가정용 AP부터 차량통신(V2X)까지 다양한 제품의 설계, 양산, 상용화를 주도했습니다. 무선 통신 프로토콜에 대한 깊은 이해를 바탕으로 복잡한 문제를 해결하는 데 강점을 가지고 있으며, 안정적이고 효율적인 시스템을 만드는 데 기여하고 싶습니다.
+            </p>
+        </section>
+
+        <section id="career" class="my-16 md:my-24">
+            <h2 class="text-3xl font-bold text-center mb-12">경력 타임라인</h2>
+            <div class="flex flex-col md:flex-row gap-8">
+                <div class="md:w-1/3">
+                    <div id="timeline-nav" class="relative border-l-2 border-stone-300 ml-3 py-4">
+                    </div>
+                </div>
+                <div class="md:w-2/3">
+                    <div id="timeline-content" class="bg-white p-6 rounded-lg shadow-lg min-h-[300px]">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="skills" class="my-16 md:my-24">
+            <h2 class="text-3xl font-bold text-center mb-4">기술 스택</h2>
+            <p class="text-center text-stone-600 mb-8">차트의 막대를 클릭하여 카테고리별 기술을 확인하세요.</p>
+            <div class="chart-container">
+                <canvas id="skillsChart"></canvas>
+            </div>
+            <div id="skills-list" class="mt-8 bg-white p-6 rounded-lg shadow-md max-w-4xl mx-auto">
+                <p class="text-center text-stone-500">위 차트에서 기술 카테고리를 선택해주세요.</p>
+            </div>
+        </section>
+
+        <section id="projects" class="my-16 md:my-24">
+            <h2 class="text-3xl font-bold text-center mb-12">주요 프로젝트 하이라이트</h2>
+            <div id="project-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            </div>
+        </section>
+
+        <section id="education" class="my-16 md:my-24">
+            <h2 class="text-3xl font-bold text-center mb-12">학력 및 자격증</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-graduation-cap mr-3 text-teal-600"></i> 학력</h3>
+                    <ul class="space-y-4">
+                        <li class="border-l-4 border-teal-500 pl-4">
+                            <p class="font-semibold">한국방송통신대학교</p>
+                            <p class="text-sm text-stone-600">컴퓨터과학과 (편입/졸업)</p>
+                            <p class="text-xs text-stone-500">2019.09 ~ 2022.08</p>
+                        </li>
+                        <li class="border-l-4 border-stone-300 pl-4">
+                            <p class="font-semibold">신구대학교</p>
+                            <p class="text-sm text-stone-600">컴퓨터멀티미디어 (졸업)</p>
+                            <p class="text-xs text-stone-500">2010.03 ~ 2012.02</p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold mb-4 flex items-center"><i class="fas fa-certificate mr-3 text-teal-600"></i> 자격증</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start"><i class="fas fa-check-circle text-teal-500 mt-1 mr-2"></i> <div><p>리눅스마스터 1급</p><span class="text-xs text-stone-500">2022.06</span></div></li>
+                        <li class="flex items-start"><i class="fas fa-check-circle text-teal-500 mt-1 mr-2"></i> <div><p>정보처리기사</p><span class="text-xs text-stone-500">2015.10</span></div></li>
+                        <li class="flex items-start"><i class="fas fa-check-circle text-teal-500 mt-1 mr-2"></i> <div><p>Oracle Certified Java Programmer (OCJP)</p><span class="text-xs text-stone-500">2011.08</span></div></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-stone-800 text-stone-300 text-center py-6">
+        <p>&copy; 2024 Gong Hyeon-gyeong. Interactive Resume.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            const workExperienceData = [
+                {
+                    id: 'hone',
+                    company: '에이치원래디오',
+                    period: '2020.12 ~ 재직중',
+                    position: '과장 (SW팀)',
+                    title: '802.11ax 2x2 가정용 AP 개발 프로젝트 리딩',
+                    projects: [
+                        'OpenWRT 기반 Application 및 Device Driver를 직접 제어하여 AP의 핵심 기능(단말 인증, QoS 등)을 설계 및 구현',
+                        'EasyMesh 표준을 분석 및 구현하여 AP 간 연동 기능을 개발, 초기 Mesh 네트워크 자동 연결 설정 구현 및 통신 안정성 확보',
+                        '자체 TCP 기반 프로토콜을 설계하고 연동 프로세스를 개발',
+                        'Management Protocol(SNMP, Hole Punching) 및 Web UI를 개발하여 원격 관리 효율성과 사용자 편의성을 증대'
+                    ]
+                },
+                {
+                    id: 'it',
+                    company: '아이티텔레콤',
+                    period: '2018.11 ~ 2020.12',
+                    position: '주임연구원 (연구소)',
+                    title: '차세대 지능형 교통시스템(C-ITS)을 위한 V2X 통신 장비 개발',
+                    projects: [
+                        'NXP i.MX 플랫폼 기반 WAVE/C-V2X OBU 및 RSU 개발을 주도하여 차량 간 통신 성공률 99% 이상 달성하고, 서울, 제주 C-ITS 실증 사업에 성공적으로 기여',
+                        'SAE J2735/1609.3 표준에 따른 차량 간 메시지 송수신 및 네트워크 라우팅 기능을 구현',
+                        'Qualcomm C-V2X 칩셋 연동 개발을 담당하여, 혼합 모드(WAVE+C-V2X) 통신 디바이스의 안정성을 확보'
+                    ]
+                },
+                {
+                    id: 'eltec',
+                    company: '엘텍',
+                    period: '2016.09 ~ 2018.03',
+                    position: '주임연구원 (S/W 1팀)',
+                    title: 'SKB 802.11ac 2x2 가정용 AP 개발',
+                    projects: [
+                        'Realtek SoC 기반 AP의 무선랜 드라이버를 직접 제어하여, 가정에서 다양한 기기의 안정적인 단말 인증 및 접근 제어(요일/시간별) 기능을 구현',
+                        'AP Repeater 기능을 개발하여, 음영 지역의 무선 커버리지를 확장',
+                        'SNMP, Hole Punching 등 Management Protocol을 구현하여 통신사의 원격 망 관리 시스템과의 연동 완료'
+                    ]
+                },
+                {
+                    id: 'wavem',
+                    company: '웨이브엠',
+                    period: '2015.02 ~ 2016.08',
+                    position: '대리 (ICT융합기술팀)',
+                    title: '교통정보 시스템 운영 및 산업용 시스템 개발',
+                    projects: [
+                        '현대자동차 교통정보시스템 운영 및 관리: 자동차 궤적 수집 및 속도 데이터 가공 서버의 안정적인 운영을 책임지며 원활한 서버 운영에 기여',
+                        '화물 상하역 일괄 처리 시스템 개발: PLC 장비 컨트롤을 위한 통합 운영 시스템을 개발하여, 수작업 대비 하역 처리 효율 개선'
+                    ]
+                },
+                {
+                    id: 'davolink',
+                    company: '다보링크',
+                    period: '2011.11 ~ 2014.10',
+                    position: '사원 (연구소)',
+                    title: 'AP Controller 개발',
+                    projects: [
+                        'CAPWAP, 802.1X(RADIUS), Captive Portal 등 다양한 표준 인증 프로토콜을 직접 구현하여, 최대 2000대의 AP와 2만 명의 사용자를 안정적으로 관리할 수 있는 기반 마련',
+                        '무선 침입 방지(WIPS) 및 무선 자원 관리(RRM) 기능을 개발하여 네트워크 보안성과 효율성을 증대'
+                    ]
+                }
+            ];
+
+            const skillsData = {
+                '언어': ['C', 'C++', 'Shell Script'],
+                '플랫폼/OS': ['Embedded Linux', 'OpenWRT', 'NXP i.MX', 'Realtek', 'MediaTek', 'MIPS'],
+                '프로토콜': ['802.11ax/ac/p', 'TCP/IP', 'EasyMesh', 'CAPWAP', 'SNMP', '802.1X (RADIUS)', 'SAE J2735/1609.3'],
+                '도구': ['Git', 'SVN', 'Jira', 'Docker', 'GDB'],
+                '전문지식': ['Wi-Fi AP & Controller', 'V2X/C-V2X (OBU/RSU)', 'Network Device Driver', 'BSP', 'Embedded System F/W']
+            };
+
+            const timelineNav = document.getElementById('timeline-nav');
+            const timelineContent = document.getElementById('timeline-content');
+
+            workExperienceData.forEach((exp, index) => {
+                const item = document.createElement('div');
+                item.className = 'timeline-item ml-[-7px] pl-8 mb-8 relative';
+                item.dataset.id = exp.id;
+                item.innerHTML = `
+                    <div class="timeline-marker absolute top-1 left-[-7px] w-3 h-3 rounded-full bg-stone-300 border-2 border-white"></div>
+                    <p class="font-semibold text-lg timeline-company">${exp.company}</p>
+                    <p class="text-sm text-stone-500">${exp.period}</p>
+                `;
+                timelineNav.appendChild(item);
+
+                if (index === 0) {
+                    item.classList.add('active');
+                    updateTimelineContent(exp.id);
+                }
+            });
+
+            timelineNav.addEventListener('click', (e) => {
+                const targetItem = e.target.closest('.timeline-item');
+                if (targetItem) {
+                    timelineNav.querySelector('.active')?.classList.remove('active');
+                    targetItem.classList.add('active');
+                    updateTimelineContent(targetItem.dataset.id);
+                }
+            });
+
+            function updateTimelineContent(id) {
+                const exp = workExperienceData.find(e => e.id === id);
+                if (exp) {
+                    timelineContent.innerHTML = `
+                        <h3 class="text-2xl font-bold text-teal-700">${exp.company}</h3>
+                        <p class="text-md font-semibold text-stone-600 mb-2">${exp.position}</p>
+                        <p class="text-sm text-stone-500 mb-4">${exp.period}</p>
+                        <h4 class="text-lg font-bold mb-4 border-b pb-2">${exp.title}</h4>
+                        <ul class="space-y-3 list-none pl-0">
+                            ${exp.projects.map(p => `<li class="flex items-start"><i class="fas fa-check text-teal-500 mt-1 mr-3"></i><span>${p}</span></li>`).join('')}
+                        </ul>
+                    `;
+                }
+            }
+            
+            const skillsChartCtx = document.getElementById('skillsChart').getContext('2d');
+            const skillsListContainer = document.getElementById('skills-list');
+            const skillCategories = Object.keys(skillsData);
+            const skillCounts = skillCategories.map(cat => skillsData[cat].length);
+
+            const skillsChart = new Chart(skillsChartCtx, {
+                type: 'bar',
+                data: {
+                    labels: skillCategories,
+                    datasets: [{
+                        label: '기술 스택 수',
+                        data: skillCounts,
+                        backgroundColor: '#5eead4', // teal-300
+                        borderColor: '#0d9488', // teal-600
+                        borderWidth: 1,
+                        hoverBackgroundColor: '#14b8a6' // teal-500
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                           beginAtZero: true,
+                           ticks: {
+                                precision: 0
+                           }
+                        },
+                        y: {
+                           grid: {
+                                display: false
+                           }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.dataset.label}: ${context.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const categoryIndex = elements[0].index;
+                            const category = skillCategories[categoryIndex];
+                            updateSkillsList(category);
+                        }
+                    }
+                }
+            });
+            
+            function updateSkillsList(category) {
+                const skills = skillsData[category];
+                skillsListContainer.innerHTML = `
+                    <h3 class="text-xl font-bold mb-4 text-teal-700">${category}</h3>
+                    <div class="flex flex-wrap gap-2">
+                        ${skills.map(skill => `<span class="bg-teal-100 text-teal-800 text-sm font-medium px-3 py-1 rounded-full">${skill}</span>`).join('')}
+                    </div>
+                `;
+            }
+
+            const projectCardsContainer = document.getElementById('project-cards');
+            workExperienceData.forEach(exp => {
+                const card = document.createElement('div');
+                card.className = 'highlight-card bg-white p-6 rounded-lg shadow-md flex flex-col';
+                card.innerHTML = `
+                    <h3 class="text-xl font-bold text-stone-800">${exp.title}</h3>
+                    <p class="text-md font-semibold text-teal-700 my-2">${exp.company}</p>
+                    <div class="mt-4 border-t pt-4 text-sm text-stone-600 flex-grow">
+                        <ul class="space-y-2 list-none pl-0">
+                           ${exp.projects.slice(0, 2).map(p => `<li class="flex items-start"><i class="fas fa-chevron-right text-teal-500 text-xs mt-1.5 mr-2"></i><span>${p.substring(0, 80)}...</span></li>`).join('')}
+                        </ul>
+                    </div>
+                    <button class="mt-4 text-sm text-teal-600 font-semibold hover:underline self-start" onclick="document.getElementById('career').scrollIntoView(); document.querySelector('.timeline-item[data-id=${exp.id}]').click();">더보기 &rarr;</button>
+                `;
+                projectCardsContainer.appendChild(card);
+            });
+
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section');
+
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 68) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+
+        });
+    </script>
+</body>
+</html>
